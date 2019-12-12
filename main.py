@@ -34,6 +34,7 @@ class Game:
         pg.mixer.pre_init(44100, -16, 4, 2048)
         pg.init()
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        # self.screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
         self.load_data()
@@ -65,6 +66,12 @@ class Game:
         self.mob_img = pg.image.load(
             path.join(img_folder, ZOMBIE_IMG[0])).convert_alpha()
 
+        self.boss_mob_img = pg.image.load(
+            path.join(img_folder, BOSS_IMG[0])).convert_alpha()
+
+        self.boss_flaco_mob_img = pg.image.load(
+            path.join(img_folder, BOSS_FLACO_IMG[0])).convert_alpha()
+
         self.mob_explo_img = pg.image.load(
             path.join(img_folder, ZOMBIE_EXPLO[0])).convert_alpha()
 
@@ -73,11 +80,21 @@ class Game:
         self.splat = pg.transform.scale(self.splat, (64, 64))
 
         self.zombie_img = []
+        self.boss_img = []
+        self.boss_flaco_img = []
         self.gun_flashes = []
         self.zombie_explo = []
 
         for img in ZOMBIE_IMG:
             self.zombie_img.append(pg.image.load(
+                path.join(img_folder, img)).convert_alpha())
+
+        for img in BOSS_IMG:
+            self.boss_img.append(pg.image.load(
+                path.join(img_folder, img)).convert_alpha())
+
+        for img in BOSS_FLACO_IMG:
+            self.boss_flaco_img.append(pg.image.load(
                 path.join(img_folder, img)).convert_alpha())
 
         for img in ZOMBIE_EXPLO:
@@ -130,6 +147,8 @@ class Game:
         self.all_sprites = pg.sprite.LayeredUpdates()
         self.walls = pg.sprite.Group()
         self.mobs = pg.sprite.Group()
+        self.boss = pg.sprite.Group()
+        self.boss_flaco = pg.sprite.Group()
         self.mobs_explo = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.items = pg.sprite.Group()
@@ -141,6 +160,49 @@ class Game:
                              tile_object.y + tile_object.height / 2)
             if tile_object.name == 'player':
                 self.player = Player(self, obj_center.x, obj_center.y)
+
+            if tile_object.name == 'boss':
+                Boss(self, obj_center.x, obj_center.y)
+            if tile_object.name == 'boss_flaco':
+                Boss_flaco(self, obj_center.x, obj_center.y)
+            if tile_object.name == 'zombie':
+                Mob(self, obj_center.x, obj_center.y)
+            if tile_object.name == 'zombie_explosivo':
+                Mob_explosivo(self, obj_center.x, obj_center.y)
+            if tile_object.name == 'wall':
+                Obstacle(self, tile_object.x, tile_object.y,
+                         tile_object.width, tile_object.height)
+            if tile_object.name in ['health', 'shotgun']:
+                Item(self, obj_center, tile_object.name)
+        self.camera = Camera(self.map.width, self.map.height)
+        self.draw_debug = False
+        self.paused = False
+        self.night = False
+        self.effects_sounds['level_start'].play()
+
+    def new2(self):
+        # initialize all variables and do all the setup for a new game
+        self.all_sprites = pg.sprite.LayeredUpdates()
+        self.walls = pg.sprite.Group()
+        self.mobs = pg.sprite.Group()
+        self.boss = pg.sprite.Group()
+        self.boss_flaco = pg.sprite.Group()
+        self.mobs_explo = pg.sprite.Group()
+        self.bullets = pg.sprite.Group()
+        self.items = pg.sprite.Group()
+        self.map = TiledMap(path.join(self.map_folder, 'level2.tmx'))
+        self.map_img = self.map.make_map()
+        self.map.rect = self.map_img.get_rect()
+        for tile_object in self.map.tmxdata.objects:
+            obj_center = vec(tile_object.x + tile_object.width / 2,
+                             tile_object.y + tile_object.height / 2)
+            if tile_object.name == 'player':
+                self.player = Player(self, obj_center.x, obj_center.y)
+
+            if tile_object.name == 'boss':
+                Boss(self, obj_center.x, obj_center.y)
+            if tile_object.name == 'boss_gordo':
+                Boss_flaco(self, obj_center.x, obj_center.y)
             if tile_object.name == 'zombie':
                 Mob(self, obj_center.x, obj_center.y)
             if tile_object.name == 'zombie_explosivo':
@@ -159,6 +221,32 @@ class Game:
     def run(self):
         # game loop - set self.playing = False to end the game
         self.playing = True
+        game_folder = path.dirname(__file__)
+        img_folder = path.join(game_folder, 'img')
+        snd_folder = path.join(game_folder, 'snd')
+        music_folder = path.join(game_folder, 'music')
+        pg.mixer.music.load(path.join(music_folder, BG_MUSIC))
+        pg.mixer.music.play(loops=-1)
+        game_folder = path.dirname(__file__)
+        img_folder = path.join(game_folder, 'img')
+        img_folder = path.join(game_folder, 'img')
+        self.player_img = pg.image.load(
+            path.join(img_folder, PLAYER_IMG)).convert_alpha()
+        while self.playing:
+            self.dt = self.clock.tick(FPS) / 1000.0  # fix for Python 2.x
+            self.events()
+            if not self.paused:
+                self.update()
+            self.draw()
+
+    def run2(self):
+        # game loop - set self.playing = False to end the game
+        self.playing = True
+        game_folder = path.dirname(__file__)
+        img_folder = path.join(game_folder, 'img')
+        snd_folder = path.join(game_folder, 'snd')
+        music_folder = path.join(game_folder, 'music')
+        pg.mixer.music.load(path.join(music_folder, BG_MUSIC_2))
         pg.mixer.music.play(loops=-1)
         game_folder = path.dirname(__file__)
         img_folder = path.join(game_folder, 'img')
@@ -241,6 +329,52 @@ class Game:
                 mob_exp.health -= bullet.damage
             mob_exp.vel = vec(0, 0)
 
+        # BOSS--->
+        hits_explo = pg.sprite.spritecollide(
+            self.player, self.boss, False, collide_hit_rect)
+        for hit in hits_explo:
+            if random() < 0.7:
+                choice(self.player_hit_sounds).play()
+            self.player.health -= BOSS_DAMAGE
+            hit.vel = vec(0, 0)
+            if self.player.health <= 0:
+                self.playing = False
+        if hits_explo:
+            self.player.hit()
+            self.player.pos += vec(BOSS_KNOCKBACK,
+                                   0).rotate(-hits_explo[0].rot)
+        # bullets hit BOSS
+        hits_explo = pg.sprite.groupcollide(
+            self.boss, self.bullets, False, True)
+        for mob_exp in hits_explo:
+            # hit.health -= WEAPONS[self.player.weapon]['damage'] * len(hits_explo[hit])
+            for bullet in hits_explo[mob_exp]:
+                mob_exp.health -= bullet.damage
+            mob_exp.vel = vec(0, 0)
+
+        # BOSS FLACO--->
+        hits_explo = pg.sprite.spritecollide(
+            self.player, self.boss_flaco, False, collide_hit_rect)
+        for hit in hits_explo:
+            if random() < 0.7:
+                choice(self.player_hit_sounds).play()
+            self.player.health -= BOSS_FLACO_DAMAGE
+            hit.vel = vec(0, 0)
+            if self.player.health <= 0:
+                self.playing = False
+        if hits_explo:
+            self.player.hit()
+            self.player.pos += vec(BOSS_FLACO_KNOCKBACK,
+                                   0).rotate(-hits_explo[0].rot)
+        # bullets hit BOSS flaco
+        hits_explo = pg.sprite.groupcollide(
+            self.boss_flaco, self.bullets, False, True)
+        for boss_flaco_exp in hits_explo:
+            # hit.health -= WEAPONS[self.player.weapon]['damage'] * len(hits_explo[hit])
+            for bullet in hits_explo[boss_flaco_exp]:
+                boss_flaco_exp.health -= bullet.damage
+            boss_flaco_exp.vel = vec(0, 0)
+
     def draw_grid(self):
         for x in range(0, WIDTH, TILESIZE):
             pg.draw.line(self.screen, LIGHTGREY, (x, 0), (x, HEIGHT))
@@ -297,34 +431,72 @@ class Game:
                     self.paused = not self.paused
 
     def show_start_screen(self):
-        pass
+        self.screen.fill(BLACK)
+        self.draw_text("BIENVENIDO", self.title_font, 100, RED,
+                       WIDTH / 2, 80, align="center")
+        self.draw_text("Presione 1 para el nivel 1", self.title_font, 50, WHITE,
+                       WIDTH / 2, HEIGHT * 1 / 4, align="center")
+        self.draw_text("Presione 2 para el nivel 2", self.title_font, 50, WHITE,
+                       WIDTH / 2, HEIGHT * 2 / 4, align="center")
+        self.draw_text("Presione 3 para el tutorial", self.title_font, 50, WHITE,
+                       WIDTH / 2, HEIGHT * 3 / 4, align="center")
+        pg.display.flip()
+        presionada = self.wait_for_key()
+        return presionada
 
     def show_go_screen(self):
         self.screen.fill(BLACK)
         self.draw_text("GAME OVER", self.title_font, 100, RED,
                        WIDTH / 2, HEIGHT / 2, align="center")
-        self.draw_text("Press a key to start", self.title_font, 75, WHITE,
+        self.draw_text("Presione tecla para comenzar", self.title_font, 75, WHITE,
                        WIDTH / 2, HEIGHT * 3 / 4, align="center")
         pg.display.flip()
+        self.show_start_screen()
         self.wait_for_key()
 
     def wait_for_key(self):
         pg.event.wait()
         waiting = True
-        while waiting:
+        keypressed = 6
+        while True:
             self.clock.tick(FPS)
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     waiting = False
                     self.quit()
-                if event.type == pg.KEYUP:
-                    waiting = False
+
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_1:
+                        # print("Holaaa!")
+                        return 1
+                    if event.key == pg.K_2:
+                        # print("Holaaa!")
+                        return 2
+                    if event.key == pg.K_3:
+                        self.screen.fill(BLACK)
+                        self.draw_text("Instrucciones de juego", self.title_font, 80, RED,
+                                       WIDTH / 2, 80, align="center")
+                        self.draw_text("Presione UP DOWN LEFT RIGHT para moverse", self.title_font, 40, WHITE,
+                                       WIDTH / 2, HEIGHT * 1 / 4, align="center")
+                        self.draw_text("Presione ESPACIO  para disparar", self.title_font, 40, WHITE,
+                                       WIDTH / 2, HEIGHT * 2 / 4, align="center")
+                        pg.display.flip()
+                        pg.event.wait()
+                        return 3
+                # if event.type == pg.KEYUP:
+                #     waiting = False
+        return keypressed
 
 
 # create the game object
 g = Game()
-g.show_start_screen()
 while True:
-    g.new()
-    g.run()
-    g.show_go_screen()
+    pressed = g.show_start_screen()
+    if pressed == 1:
+        g.new()
+        g.run()
+        # g.show_go_screen()
+    if pressed == 2:
+        g.new2()
+        g.run2()
+        # g.show_go_screen()

@@ -194,6 +194,174 @@ class Mob(pg.sprite.Sprite):
             pg.draw.rect(self.image, col, self.health_bar)
 
 
+class Boss_flaco(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self._layer = BOSS_FLACO_LAYER
+        self.groups = game.all_sprites, game.boss_flaco
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        # self.image = game.mob_img.copy()
+        self.image = game.boss_flaco_img.copy()[1]
+        self.mov_frames = game.boss_flaco_img.copy()
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.hit_rect = BOSS_FLACO_HIT_RECT.copy()
+        self.hit_rect.center = self.rect.center
+        self.pos = vec(x, y)
+        self.vel = vec(0, 0)
+        self.acc = vec(0, 0)
+        self.rect.center = self.pos
+        self.rot = 0
+        self.health = BOSS_FLACO_HEALTH
+        self.speed = choice(BOSS_FLACO_SPEEDS)
+        self.target = game.player
+
+        self.current_frame = 0
+        self.last_update = 0
+
+    def avoid_mobs(self):
+        for mob in self.game.mobs:
+            if mob != self:
+                dist = self.pos - mob.pos
+                if 0 < dist.length() < AVOID_RADIUS:
+                    self.acc += dist.normalize()
+
+    def animate(self):
+        now = pg.time.get_ticks()
+
+        print(self.vel)
+        # print(self.acc[1])
+        if not abs(self.vel[0]) == 0 or not abs(self.vel[1]) == 0:
+            if now - self.last_update > 350:
+                self.last_update = now
+                self.current_frame = (
+                    self.current_frame + 1) % len(self.mov_frames)
+                self.game.boss_flaco_img = self.mov_frames[self.current_frame]
+                self.rect = self.image.get_rect()
+
+    def update(self):
+        self.animate()
+        target_dist = self.target.pos - self.pos
+        if target_dist.length_squared() < DETECT_RADIUS_BOSS_FLACO**2:
+            if random() < 0.002:
+                choice(self.game.zombie_moan_sounds).play()
+            self.rot = target_dist.angle_to(vec(1, 0))
+            self.image = pg.transform.rotate(self.game.boss_flaco_mob_img, self.rot)
+            self.rect.center = self.pos
+            self.acc = vec(1, 0).rotate(-self.rot)
+            self.avoid_mobs()
+            self.acc.scale_to_length(self.speed)
+            self.acc += self.vel * -1
+            self.vel += self.acc * self.game.dt
+            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+            self.hit_rect.centerx = self.pos.x
+            collide_with_walls(self, self.game.walls, 'x')
+            self.hit_rect.centery = self.pos.y
+            collide_with_walls(self, self.game.walls, 'y')
+            self.rect.center = self.hit_rect.center
+        if self.health <= 0:
+            choice(self.game.zombie_hit_sounds).play()
+            self.kill()
+            self.game.map_img.blit(self.game.splat, self.pos - vec(32, 32))
+
+    def draw_health(self):
+        if self.health > 60:
+            col = GREEN
+        elif self.health > 30:
+            col = YELLOW
+        else:
+            col = RED
+        width = int(self.rect.width * self.health / BOSS_FLACO_HEALTH)
+        self.health_bar = pg.Rect(0, 0, width, 7)
+        if self.health < BOSS_FLACO_HEALTH:
+            pg.draw.rect(self.image, col, self.health_bar)
+
+
+class Boss(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self._layer = BOSS_LAYER
+        self.groups = game.all_sprites, game.boss
+        pg.sprite.Sprite.__init__(self, self.groups)
+        self.game = game
+        # self.image = game.mob_img.copy()
+        self.image = game.boss_img.copy()[1]
+        self.mov_frames = game.boss_img.copy()
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.hit_rect = BOSS_HIT_RECT.copy()
+        self.hit_rect.center = self.rect.center
+        self.pos = vec(x, y)
+        self.vel = vec(0, 0)
+        self.acc = vec(0, 0)
+        self.rect.center = self.pos
+        self.rot = 0
+        self.health = BOSS_HEALTH
+        self.speed = choice(BOSS_SPEEDS)
+        self.target = game.player
+
+        self.current_frame = 0
+        self.last_update = 0
+
+    def avoid_mobs(self):
+        for mob in self.game.mobs:
+            if mob != self:
+                dist = self.pos - mob.pos
+                if 0 < dist.length() < AVOID_RADIUS:
+                    self.acc += dist.normalize()
+
+    def animate(self):
+        now = pg.time.get_ticks()
+
+        print(self.vel)
+        # print(self.acc[1])
+        if not abs(self.vel[0]) == 0 or not abs(self.vel[1]) == 0:
+            if now - self.last_update > 350:
+                self.last_update = now
+                self.current_frame = (
+                    self.current_frame + 1) % len(self.mov_frames)
+                self.game.boss_img = self.mov_frames[self.current_frame]
+                self.rect = self.image.get_rect()
+
+    def update(self):
+        self.animate()
+        target_dist = self.target.pos - self.pos
+        if target_dist.length_squared() < DETECT_RADIUS_BOSS**2:
+            if random() < 0.002:
+                choice(self.game.zombie_moan_sounds).play()
+            self.rot = target_dist.angle_to(vec(1, 0))
+            self.image = pg.transform.rotate(self.game.boss_mob_img, self.rot)
+            self.rect.center = self.pos
+            self.acc = vec(1, 0).rotate(-self.rot)
+            self.avoid_mobs()
+            self.acc.scale_to_length(self.speed)
+            self.acc += self.vel * -1
+            self.vel += self.acc * self.game.dt
+            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+            self.hit_rect.centerx = self.pos.x
+            collide_with_walls(self, self.game.walls, 'x')
+            self.hit_rect.centery = self.pos.y
+            collide_with_walls(self, self.game.walls, 'y')
+            self.rect.center = self.hit_rect.center
+        if self.health <= 0:
+            choice(self.game.zombie_hit_sounds).play()
+            self.kill()
+            self.game.map_img.blit(self.game.splat, self.pos - vec(32, 32))
+
+    def draw_health(self):
+        if self.health > 60:
+            col = GREEN
+        elif self.health > 30:
+            col = YELLOW
+        else:
+            col = RED
+        width = int(self.rect.width * self.health / BOSS_HEALTH)
+        self.health_bar = pg.Rect(0, 0, width, 7)
+        if self.health < BOSS_HEALTH:
+            pg.draw.rect(self.image, col, self.health_bar)
+
+
 class Bullet(pg.sprite.Sprite):
     def __init__(self, game, pos, dir, damage):
         self._layer = BULLET_LAYER
@@ -260,11 +428,11 @@ class Mob_explosivo(pg.sprite.Sprite):
         # print("ZOMBIEEEEE", self.vel)
         # print(self.acc[1])
         if not abs(self.vel[0]) == 0 or not abs(self.vel[1]) == 0:
-            print("now: ", now)
-            print("last : ", self.last_update)
-            print("Operacion",  now - self.last_update)
+            # print("now: ", now)
+            # print("last : ", self.last_update)
+            # print("Operacion",  now - self.last_update)
             if (now - self.last_update) > 350:
-                print("ENTROOOOO")
+                # print("ENTROOOOO")
                 self.last_update = now
                 self.current_frame = (
                     self.current_frame + 1) % len(self.mov_frames)

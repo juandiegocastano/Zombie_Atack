@@ -15,6 +15,8 @@ CYAN = (0, 255, 255)
 
 # game settings
 WIDTH = 1024   # 16 * 64 or 32 * 32 or 64 * 16
+# WIDTH = 20   # 16 * 64 or 32 * 32 or 64 * 16
+# HEIGHT = 768  # 16 * 48 or 32 * 24 or 64 * 12
 HEIGHT = 768  # 16 * 48 or 32 * 24 or 64 * 12
 FPS = 60
 TITLE = "Tilemap Demo"
@@ -68,10 +70,31 @@ ZOMBIE_EXPLO = ['Zombie_1.png', 'Zombie_2.png', 'Zombie_3.png']
 MOB_SPEEDS_EXPLO = [150, 100, 75, 125]
 MOB_HIT_RECT_EXPLO = pg.Rect(0, 0, 30, 30)
 MOB_HEALTH_EXPLO = 200
-MOB_DAMAGE_EXPLO = 40
+MOB_DAMAGE_EXPLO = 20
 MOB_KNOCKBACK_EXPLO = 20
 AVOID_RADIUS_EXPLO = 50
 DETECT_RADIUS_EXPLO = 400
+
+# Boss settings
+BOSS_IMG = ['boss.png', 'boss2.png', 'boss3.png', 'boss4.png']
+BOSS_SPEEDS = [200, 150, 100, 150]
+BOSS_HIT_RECT = pg.Rect(0, 0, 30, 30)
+BOSS_HEALTH = 500
+BOSS_DAMAGE = 50
+BOSS_KNOCKBACK = 20
+AVOID_RADIUS_BOSS = 40
+DETECT_RADIUS_BOSS = 400
+
+# Boss flaco settings
+BOSS_FLACO_IMG = ['boss_gordo.png', 'boss_gordo.png']
+BOSS_FLACO_SPEEDS = [500, 350, 250, 260]
+BOSS_FLACO_HIT_RECT = pg.Rect(0, 0, 30, 30)
+BOSS_FLACO_HEALTH = 600
+BOSS_FLACO_DAMAGE = 40
+BOSS_FLACO_KNOCKBACK = 20
+AVOID_RADIUS_BOSS_FLACO = 50
+DETECT_RADIUS_BOSS_FLACO = 400
+
 
 # Effects
 MUZZLE_FLASHES = ['whitePuff15.png', 'whitePuff16.png', 'whitePuff17.png',
@@ -88,6 +111,8 @@ WALL_LAYER = 1
 PLAYER_LAYER = 2
 BULLET_LAYER = 3
 MOB_LAYER = 2
+BOSS_LAYER = 2
+BOSS_FLACO_LAYER = 2
 MOB_EXPLO_LAYER = 2
 EFFECTS_LAYER = 4
 ITEMS_LAYER = 1
@@ -100,7 +125,8 @@ BOB_RANGE = 10
 BOB_SPEED = 0.3
 
 # Sounds
-BG_MUSIC = 'espionage.ogg'
+BG_MUSIC = 'bg_music.ogg'
+BG_MUSIC_2 = 'bg_music2.mp3'
 PLAYER_HIT_SOUNDS = ['pain/8.wav', 'pain/9.wav', 'pain/10.wav', 'pain/11.wav']
 ZOMBIE_MOAN_SOUNDS = ['brains2.wav', 'brains3.wav', 'zombie-roar-1.wav', 'zombie-roar-2.wav',
                       'zombie-roar-3.wav', 'zombie-roar-5.wav', 'zombie-roar-6.wav', 'zombie-roar-7.wav']
